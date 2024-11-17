@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guardián de Noticias</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Guardián de Noticias</h1>
+    <p>Verifica la confiabilidad de las noticias en segundos.</p>
+  </header>
+  
+  <main>
+    <section class="input-section">
+      <h2>Sube una noticia o ingrésala manualmente</h2>
+      
+      <!-- Formulario para subir imagen o texto -->
+      <form id="newsForm">
+        <label for="newsImage">Sube una imagen (opcional):</label>
+        <input type="file" id="newsImage" accept="image/*">
+        
+        <label for="newsText">Escribe o pega la noticia:</label>
+        <textarea id="newsText" placeholder="Escribe o pega aquí el texto de la noticia..." rows="6"></textarea>
+        
+        <button type="submit">Verificar noticia</button>
+      </form>
+      
+      <!-- Resultado de la verificación -->
+      <div id="result" class="result"></div>
+    </section>
+  </main>
+  
+  <footer>
+    <p>© 2024 Guardián de Noticias - Todos los derechos reservados.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
