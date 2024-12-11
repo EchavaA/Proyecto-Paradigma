@@ -1,5 +1,36 @@
+document.getElementById('newsForm').addEventListener("submit", async () => {
+    const urlInput = document.getElementById('urlInput').value;
+    const resultElement = document.getElementById('result');
+  
+    if (!urlInput) {
+      resultElement.textContent = 'Por favor, ingresa un URL.';
+      return;
+    }
+  try {
+      // Llama al backend para verificar el URL
+      const response = await fetch('http://localhost:5500/check-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: urlInput }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Error al comunicarse con el servidor.');
+      }
+  
+      const data = await response.json();
+      resultElement.textContent = `Resultado: ${data.message}`;
+    } catch (error) {
+      console.error('Error:', error);
+      resultElement.textContent = 'Hubo un error al verificar el URL.';
+    }
+  });
 
-document.getElementById("newsForm").addEventListener("submit", async (event) => {
+
+
+/*document.getElementById("newsForm").addEventListener("submit", async (event) => {
     event.preventDefault(); // Evitar que el formulario recargue la página
 
     const resultDiv = document.getElementById("result");
@@ -39,4 +70,4 @@ document.getElementById("newsForm").addEventListener("submit", async (event) => 
         resultDiv.textContent = "Error al verificar la noticia. Intenta de nuevo.";
         resultDiv.className = "result error";
     }
-});
+});*/

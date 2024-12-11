@@ -4,6 +4,10 @@ from flask_cors import CORS
 import pytesseract
 from PIL import Image
 import os
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import requests
+
 
 app = Flask(__name__)
 CORS(app)
