@@ -1,19 +1,23 @@
-document.getElementById('newsForm').addEventListener("submit", async () => {
-    const urlInput = document.getElementById('urlInput').value;
-    const resultElement = document.getElementById('result');
+document.getElementById('newsForm').addEventListener("submit", async (event) => {
+    event.preventDefault(); // Prevenir la recarga de la página
   
-    if (!urlInput) {
-      resultElement.textContent = 'Por favor, ingresa un URL.';
+    const newsText = document.getElementById('newsText').value;
+    const resultElement = document.getElementById('result');
+    
+    // Validar que haya texto en la noticia
+    if (!newsText) {
+      resultElement.textContent = 'Por favor, escribe o pega una noticia.';
       return;
     }
-  try {
-      // Llama al backend para verificar el URL
+  
+    try {
+      // Llama al backend para verificar la noticia
       const response = await fetch('http://localhost:5500/check-url', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: urlInput }),
+        body: JSON.stringify({ text: newsText }),
       });
   
       if (!response.ok) {
@@ -24,11 +28,10 @@ document.getElementById('newsForm').addEventListener("submit", async () => {
       resultElement.textContent = `Resultado: ${data.message}`;
     } catch (error) {
       console.error('Error:', error);
-      resultElement.textContent = 'Hubo un error al verificar el URL.';
+      resultElement.textContent = 'Hubo un error al verificar la noticia.';
     }
   });
-
-
+  
 
 /*document.getElementById("newsForm").addEventListener("submit", async (event) => {
     event.preventDefault(); // Evitar que el formulario recargue la página
