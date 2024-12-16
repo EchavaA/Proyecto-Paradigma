@@ -1,41 +1,67 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
-import pytesseract
-from PIL import Image
-import os
+import ssl
+import socket
+import validators
+from transformers import pipeline
 
 app = Flask(__name__)
-CORS(app)
 
-# Ruta de Tesseract en Windows (cambiar si es necesario)
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# Cargar el pipeline de clasificación de Hugging Face
+classifier = pipeline("zero-shot-classification")
 
-@app.route("/verify", methods=["POST"])
-def verify_news():
-    # Procesar imagen si se envió
-    text_from_image = ""
-    if "image" in request.files:
-        image = request.files["image"]
-        img = Image.open(image)
-        text_from_image = pytesseract.image_to_string(img)
+# Función para verificar si un sitio tiene un certificado SSL válido
+def check_ssl_certificate(url):
+    try:
+        # Extraer el dominio del URL
+        domain = url.split('://')[1] if "://" in url else url
+        host = domain.split('/')[0]  # Obtener solo el dominio
 
-    # Procesar texto ingresado
-    text_from_user = request.form.get("text", "")
+        # Conectar al servidor y obtener el certificado SSL
+        context = ssl.create_default_context()
+        connection = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname=host)
+        connection.connect((host, 443))  # Puerto HTTPS
+        cert = connection.getpeercert()  # Obtener el certificado
 
-    # Combinar texto de la imagen y el texto del usuario
-    full_text = f"{text_from_image} {text_from_user}".strip()
+        # Si se obtuvo el certificado, se considera seguro
+        if cert:
+            return True
+    except Exception as e:
+        print(f"Error verificando el certificado SSL: {e}")
+    return False
 
-    if not full_text:
-        return jsonify({"message": "No se proporcionó texto para verificar.", "isReliable": False})
+# Función para realizar un análisis de IA sobre la seguridad del URL
+def ai_security_analysis(url):
+    # Etiquetas candidatas para el análisis de seguridad
+    candidate_labels = ["seguro", "no seguro", "phishing", "fraudulento"]
+    result = classifier(url, candidate_labels)
+    return result['labels'][0]  # Devuelve la etiqueta de mayor probabilidad
 
-    # Aquí puedes implementar lógica para analizar la confiabilidad
-    # Por simplicidad, asumimos que cualquier texto con "falso" no es confiable
-    is_reliable = "falso" not in full_text.lower()
+@app.route('/check-url', methods=['POST'])
+def check_url():
+    data = request.get_json()
+    url = data.get('url')
 
-    return jsonify({
-        "message": "La noticia es confiable." if is_reliable else "La noticia NO es confiable.",
-        "isReliable": is_reliable
-    })
+    if not url:
+        return jsonify({'message': 'No se proporcionó un URL'}), 400
 
-if __name__ == "__main__":
+    # Verificar si el URL es válido
+    if not validators.url(url):
+        return jsonify({'message': 'El URL no es válido.'}), 400
+
+    # Verificar si el URL tiene un certificado SSL válido
+    if not url.startswith('https://'):
+        return jsonify({'message': 'El URL no es seguro (debe usar HTTPS).'}), 400
+
+    # Verificar el certificado SSL
+    ssl_valid = check_ssl_certificate(url)
+
+    # Análisis AI para verificar la seguridad del sitio
+    ai_analysis = ai_security_analysis(url)
+
+    if ssl_valid and ai_analysis == "seguro":
+        return jsonify({'message': 'El URL es seguro y tiene un certificado SSL válido.'}), 200
+    else:
+        return jsonify({'message': f'El URL no es seguro (Certificado SSL: {ssl_valid}, IA: {ai_analysis}).'}), 400
+
+if __name__ == '__main__':
     app.run(debug=True)
