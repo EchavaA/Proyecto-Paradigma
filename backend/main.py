@@ -4,16 +4,16 @@ from flask_cors import CORS
 import pytesseract
 from PIL import Image
 import os
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import requests
 
-
+# Configuración inicial
 app = Flask(__name__)
 CORS(app)
 
-# Ruta de Tesseract en Windows (cambiar si es necesario)
+# Ruta de Tesseract en Windows (modifica si es diferente en tu sistema)
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+# Inicialización del modelo de clasificación
+classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
 @app.route("/verify", methods=["POST"])
 def verify_news():
@@ -33,12 +33,16 @@ def verify_news():
     if not full_text:
         return jsonify({"message": "No se proporcionó texto para verificar.", "isReliable": False})
 
-    # Aquí puedes implementar lógica para analizar la confiabilidad
-    # Por simplicidad, asumimos que cualquier texto con "falso" no es confiable
-    is_reliable = "falso" not in full_text.lower()
+    # Análisis NLP
+    labels = ["real", "falso", "propaganda", "verdadero"]
+    result = classifier(full_text, labels)
+    main_label = result['labels'][0]
+    confidence = result['scores'][0]
 
+    # Construcción de la respuesta
+    is_reliable = main_label == "real" or main_label == "verdadero"
     return jsonify({
-        "message": "La noticia es confiable." if is_reliable else "La noticia NO es confiable.",
+        "message": f"La noticia parece ser '{main_label}' con una confianza de {confidence:.2f}.",
         "isReliable": is_reliable
     })
 
